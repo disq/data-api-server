@@ -8,6 +8,22 @@
 			"revision": "61e686294e58a8698a9e1091268bb4ac1116bd5e",
 			"branch": "master",
 			"notests": true
+		},
+		{
+			"importpath": "github.com/urfave/negroni",
+			"repository": "https://github.com/urfave/negroni",
+			"vcs": "git",
+			"revision": "6edff56736fa7bd546812f149e8cdaae61e5a38f",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "gopkg.in/tylerb/graceful.v1",
+			"repository": "https://gopkg.in/tylerb/graceful.v1",
+			"vcs": "git",
+			"revision": "842f31108f8d3512ce3176d00bf1a32db1d5e3af",
+			"branch": "master",
+			"notests": true
 		}
 	]
 }

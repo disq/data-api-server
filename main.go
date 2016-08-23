@@ -19,6 +19,7 @@ func main() {
 	flag.Parse()
 	logger := stdlog.GetFromFlags()
 
+	// Sanitize Params
 	if _, err := os.Stat(*dataDir); err != nil {
 		logger.Errorf("Error stat %s: %v", *dataDir, err)
 		panic(err)
@@ -49,6 +50,14 @@ func main() {
 		panic("Invalid redis db")
 	}
 
+	// Register Events
+	et := []server.EventType{
+		server.NewEventType("session_start"),
+		server.NewEventType("session_end"),
+		server.NewEventType("link_clicked"),
+	}
+
+	// Configure Server
 	config := &server.ServerConfig{
 		DataDir:       *dataDir,
 		ListenIp:      *listenIp,
@@ -56,7 +65,9 @@ func main() {
 		RedisHost:     redisHost,
 		RedisPort:     redisPort,
 		RedisDatabase: redisDb,
+		EventTypes:    et,
 	}
 
+	// Run
 	server.NewServer(config, logger).Run()
 }
