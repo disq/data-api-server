@@ -36,7 +36,7 @@ func (s *Server) handleEvent(r *EventRecord) error {
 	s.extractTimestamp(r)
 	s.Logger.Debug("Final form:", r)
 
-	// TODO Store
+	s.Storage.Enqueue(r)
 	// TODO Update stats
 
 	return nil

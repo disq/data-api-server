@@ -40,7 +40,7 @@ This version of the API always uses HTTP GET.
 
 ###### HTTP
   - Pro: Cleartext, infinitely extensible protocol
-  - Con: Cleartext, infinitely extensible protocol (FIXME maybe?)
+  - Con: Cleartext, infinitely extensible protocol (**FIXME** maybe?)
 
 ###### HTTP GET
   - Pro: Easier to log/trace/sniff by third-party tools since all of the data is in the same place. For instance you can enable web-request logging in the load balancer and automatically get a backup of all your API calls.
@@ -59,3 +59,20 @@ The request format is:
 
 ## Response
 If the response is `HTTP 200 OK`, then the event is valid and it's probably stored. Response content is simply the word "Accepted". `HTTP 400` responses are given for invalid events. 
+
+
+## Storage Format
+
+The files are stored in `datadir` in this format:
+
+```
+<datadir>/<YYYY>/<MM>/<DD>/<HH>_<event name>.tsv
+```
+
+(**FIXME** add random-letter-of-the-alphabet partitioning?)
+
+The file format is TSV with embedded JSON, first column is the timestamp of the event, and second column is the JSON data. (**FIXME** check Spark load formats)
+
+## Statistics
+
+**TODO**

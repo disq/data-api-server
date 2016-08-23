@@ -57,9 +57,14 @@ func main() {
 		server.NewEventType("link_clicked"),
 	}
 
+	// Configure & Init storage
+	storage := server.NewStorage(&server.StorageConfig{
+		DataDir: *dataDir,
+	}, logger)
+	storage.RunInBackground()
+
 	// Configure Server
 	config := &server.ServerConfig{
-		DataDir:       *dataDir,
 		ListenIp:      *listenIp,
 		ListenPort:    *listenPort,
 		RedisHost:     redisHost,
@@ -69,5 +74,7 @@ func main() {
 	}
 
 	// Run
-	server.NewServer(config, logger).Run()
+	server.NewServer(config, logger, storage).Run()
+
+	storage.Stop()
 }

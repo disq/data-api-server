@@ -15,22 +15,23 @@ type ServerConfig struct {
 	RedisHost     string
 	RedisPort     int
 	RedisDatabase int
-	DataDir       string
 	EventTypes    []EventType
 }
 
 type Server struct {
-	Config *ServerConfig
-	Logger log.Logger
+	Config  *ServerConfig
+	Logger  log.Logger
+	Storage *Storage
 }
 
 const OK_CONTENT = "Accepted"
 
-func NewServer(c *ServerConfig, l log.Logger) *Server {
+func NewServer(c *ServerConfig, l log.Logger, s *Storage) *Server {
 
 	return &Server{
-		Config: c,
-		Logger: l,
+		Config:  c,
+		Logger:  l,
+		Storage: s,
 	}
 }
 
@@ -60,7 +61,26 @@ func (s *Server) Run() {
 		fmt.Fprint(w, "Hello?")
 	})
 
-	graceful.Run(fmt.Sprintf("%s:%d", s.Config.ListenIp, s.Config.ListenPort), 10*time.Second, mux)
+	httpServer := &graceful.Server{
+		Timeout: 10 * time.Second,
+		Server: &http.Server{
+			Addr:    fmt.Sprintf("%s:%d", s.Config.ListenIp, s.Config.ListenPort),
+			Handler: mux,
+		},
+	}
+
+	// Launch in separate goroutine so we can block on the main one
+	func() {
+		if err := httpServer.ListenAndServe(); err != nil {
+			s.Logger.Error(err)
+			panic(err)
+		}
+	}()
+
+	// Wait until server is stopped
+	<-httpServer.StopChan()
+
+	s.Logger.Info("Shutting down...")
 }
 
 func poorMansMiddleware(fn http.HandlerFunc) http.HandlerFunc {
