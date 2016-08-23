@@ -1,0 +1,13 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/alexcesaro/log",
+			"repository": "https://github.com/alexcesaro/log",
+			"vcs": "git",
+			"revision": "61e686294e58a8698a9e1091268bb4ac1116bd5e",
+			"branch": "master",
+			"notests": true
+		}
+	]
+}

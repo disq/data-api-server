@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+find . ! -path "*/vendor/*" -type f -name '*.go' -exec gofmt -l -s -w {} \;
