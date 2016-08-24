@@ -71,15 +71,20 @@ If the response is `HTTP 200 OK`, then the event is valid and it's probably stor
 
 ## Storage Format
 
+The file format is TSV with embedded JSON, first column is the received timestamp of the event in nanoseconds, and second column is the JSON data.
+
 The files are stored in `datadir` in this format:
 
 ```
 <datadir>/<YYYY>/<MM>/<DD>/<HH>_<event name>.tsv
 ```
 
-(**FIXME** add random-letter-of-the-alphabet partitioning?)
+To change the format, edit `DIRECTORY_FORMAT` and `FILE_FORMAT` in `storage.go`.
 
-The file format is TSV with embedded JSON, first column is the received timestamp of the event in nanoseconds, and second column is the JSON data. (**FIXME** check Spark load formats)
+- If event types in storage are to be queried separately instead of looking at all the events of a specific date, the `event_name` field can be moved up the chain to its own directory.
+- If a log collector (like Apache Flume, td-agent, etc) is to be used to push data to storage, the directory scheme can be abandoned altogether and each event type can have its own file per-hour (or per-day).
+- If the files are to be stored in AWS S3, using a random single-letter prefix (partition key) before the `YYYY` field is recommended. This would avoid hot partitions in the storage layer and prevent I/O bottlenecks. This would require additional development in `storage.go`. (See [Amazon S3 Performance Tips & Tricks](https://aws.amazon.com/blogs/aws/amazon-s3-performance-tips-tricks-seattle-hiring-event/)) 
+
 
 
 ## Caveats
@@ -89,7 +94,7 @@ The file format is TSV with embedded JSON, first column is the received timestam
 - Events are written to storage in a single-threaded manner (one goroutine per file) due to the nature of the CSV-format. If we were to switch the filesystem with a data storage service, a worker-pool should be used so that events can be written in parallel.
 - Client IP and other related metadata is not stored.
 - Authentication (API key) is not implemented.
-- Rate-limiting is not implemented, but it should be fairly easy using proper middlewares.
+- Rate-limiting is not implemented, but it should be fairly easy using proper middleware.
 - CSV escapes quotes, which is not good because the data is a JSON map and always has quotes in it. Another format (at least custom CSV dialect with quote-escaping disabled) would've been better.
 
 

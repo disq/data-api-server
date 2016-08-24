@@ -24,7 +24,7 @@ type Storage struct {
 }
 
 // One of these two constants should have {event} in it, otherwise multiple Storage instances will try to write to the same file. Which is never good.
-const DIRECTORY_FORMAT = "2006/01/02"
+const DIRECTORY_FORMAT = "2006/01/02/" // Trailing slash!
 const FILE_FORMAT = "15_{event}.tsv"
 
 func NewStorage(c *StorageConfig, l log.Logger) (s *Storage) {
@@ -119,7 +119,7 @@ func (s *Storage) determineStoragePath(r *EventRecord) (dir, fileWithDir string)
 	dir = strings.Replace(fmt.Sprintf("%s/%s", s.Config.DataDir, dirPrefix), "{event}", r.name, -1)
 
 	filename := strings.Replace(t.Format(FILE_FORMAT), "{event}", r.name, -1)
-	fileWithDir = fmt.Sprintf("%s/%s", dir, filename)
+	fileWithDir = fmt.Sprintf("%s%s", dir, filename)
 	return
 }
 
