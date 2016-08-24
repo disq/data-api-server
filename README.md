@@ -32,7 +32,15 @@ Usage of ./data-api-server:
 ```
 
 ## Event Types
-Event types are defined in `main.go`. Currently defined events are: `session_start`, `session_end`, `link_clicked`.
+Event types are registered in `main.go`. Valid events are `session_start`, `session_end` and `link_clicked`. The `EventType` struct is defined in `server/event.go`:
+```go
+type EventType struct {
+	Name string
+	Storage *Storage
+}
+```
+Configuration per `EventType` can be added in the future. (Like separate rate-limit or validation options, list of expected/required params, etc)
+
 
 ## API Format
 
@@ -71,8 +79,25 @@ The files are stored in `datadir` in this format:
 
 (**FIXME** add random-letter-of-the-alphabet partitioning?)
 
-The file format is TSV with embedded JSON, first column is the timestamp of the event, and second column is the JSON data. (**FIXME** check Spark load formats)
+The file format is TSV with embedded JSON, first column is the received timestamp of the event in nanoseconds, and second column is the JSON data. (**FIXME** check Spark load formats)
+
+
+## Caveats
+- Bulk mode is not supported. A way to send bulk (ie. previously cached) events can be implemented, preferably with a protocol that natively supports batching.
+- Events are validated in the same goroutine as the request, because event validation is currently a few string operations. This way we can tell the client if their event is "valid" or not using the HTTP status code in the response.
+- If time-consuming validation tasks are needed, the server should always return `200 OK` on received data and do the actual processing/validation in a worker-pool.
+- Events are written to storage in a single-threaded manner (one goroutine per file) due to the nature of the CSV-format. If we were to switch the filesystem with a data storage service, a worker-pool should be used so that events can be written in parallel.
+- Client IP and other related metadata is not stored.
+- Authentication (API key) is not implemented.
+- Rate-limiting is not implemented, but it should be fairly easy using proper middlewares.
+- CSV escapes quotes, which is not good because the data is a JSON map and always has quotes in it. Another format (at least custom CSV dialect with quote-escaping disabled) would've been better.
+
 
 ## Statistics
-
 **TODO**
+
+## SDKs
+- SDKs should store and retry each event until they get an `HTTP 200` from the server.
+- If `HTTP 400` response is encountered, the event is deemed invalid by the server and should be discarded without further retries.
+- Response body and/or headers (like `Content-Type`) are subject to change and should not be checked by the SDKs.
+
