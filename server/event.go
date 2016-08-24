@@ -41,7 +41,7 @@ func (s *Server) handleEvent(r *EventRecord) error {
 	s.Logger.Debug("Final form:", r)
 
 	t.Storage.Enqueue(r)
-	// TODO Update stats
+	s.Stats.CountEvent(r)
 
 	return nil
 }
@@ -84,5 +84,5 @@ func (s *Server) extractTimestamp(e *EventRecord) error {
 
 func (r *EventRecord) String() string {
 	jsonData, _ := json.Marshal(r.data)
-	return fmt.Sprintf("[%s @ %d] %v", r.name, r.tsReceived, string(jsonData))
+	return fmt.Sprintf("[%s @ %d] %s", r.name, r.tsReceived, string(jsonData))
 }

@@ -50,6 +50,8 @@ func main() {
 		panic("Invalid redis db")
 	}
 
+	stats := server.NewStats(&server.StatsConfig{redisHost, redisPort, redisDb}, logger)
+
 	// Register Events
 	eventNames := []string{
 		"session_start",
@@ -87,10 +89,13 @@ func main() {
 	}
 
 	// Run
-	server.NewServer(config, logger).Run()
+	server.NewServer(config, stats, logger).Run()
 
 	// Wait for all storage workers to stop
 	for _, e := range et {
 		e.Storage.Stop()
 	}
+
+	stats.Close()
+	logger.Info("Goodbye!")
 }

@@ -99,7 +99,39 @@ To change the format, edit `DIRECTORY_FORMAT` and `FILE_FORMAT` in `storage.go`.
 
 
 ## Statistics
-**TODO**
+- Redis is used to store aggregated event counts.
+- Counts are stored in sorted sets by type. (This probably won't scale at all since adding elements is expensive)
+- To get overall counts, make a request to the `/stats` endpoint:
+```
+$ curl 'http://:8080/stats'|jq .
+```
+```json
+{
+  "stats": {
+    "link_clicked": 0,
+    "session_end": 1,
+    "session_start": 13
+  }
+}
+```
+
+- To get counts between two time periods (second-precision), make a request to the same endpoint but include `since` and/or `until` parameters:
+```
+$ curl 'http://:8080/stats?since=1472063303'|jq .
+```
+```json
+{
+  "since": 1472063303,
+  "stats": {
+    "link_clicked": 0,
+    "session_end": 1,
+    "session_start": 7
+  },
+  "until": 0
+}
+```
+
+
 
 ## SDKs
 - SDKs should store and retry each event until they get an `HTTP 200` from the server.

@@ -1,10 +1,12 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/alexcesaro/log"
 	"gopkg.in/tylerb/graceful.v1"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -20,15 +22,17 @@ type ServerConfig struct {
 
 type Server struct {
 	Config *ServerConfig
+	Stats  *Stats
 	Logger log.Logger
 }
 
 const OK_CONTENT = "Accepted"
 
-func NewServer(c *ServerConfig, l log.Logger) *Server {
+func NewServer(c *ServerConfig, s *Stats, l log.Logger) *Server {
 
 	return &Server{
 		Config: c,
+		Stats:  s,
 		Logger: l,
 	}
 }
@@ -50,6 +54,8 @@ func (s *Server) Run() {
 	}))
 
 	mux.HandleFunc("/v1/", poorMansMiddleware(s.apiHandler))
+
+	mux.HandleFunc("/stats", poorMansMiddleware(s.statsHandler))
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/" {
@@ -134,4 +140,54 @@ func (s *Server) apiHandler(w http.ResponseWriter, req *http.Request) {
 	} else {
 		fmt.Fprint(w, OK_CONTENT)
 	}
+}
+
+func getIntParam(req *http.Request, p string, empty_default, invalid_default int) (val int) {
+	s := req.FormValue(p)
+	val, err := strconv.Atoi(s)
+	if err != nil {
+		if s == "" {
+			val = empty_default
+		} else {
+			val = invalid_default
+		}
+	}
+	return
+}
+
+func (s *Server) statsHandler(w http.ResponseWriter, req *http.Request) {
+	s.Logger.Debugf("Stats request from %s: %s", req.RemoteAddr, req.URL.RequestURI())
+
+	response := make(map[string]interface{})
+
+	defer func() {
+		jsonData, _ := json.Marshal(response)
+		fmt.Fprintf(w, "%s", string(jsonData))
+	}()
+
+	req.ParseForm()
+	start := getIntParam(req, "since", 0, -1)
+	end := getIntParam(req, "until", 0, -1)
+	if start < 0 || end < 0 || (start != 0 && end != 0 && end < start) {
+		response["error"] = "Invalid since or until parameters"
+		return
+	}
+
+	if start != 0 || end != 0 {
+		response["since"] = start
+		response["until"] = end
+	}
+
+	data := make(map[string]int, 8)
+	for _, e := range s.Config.EventTypes {
+		if start != 0 || end != 0 {
+			t, _ := s.Stats.GetCounts(e.Name, start, end)
+			data[e.Name] = t
+		} else {
+			t, _ := s.Stats.GetTotal(e.Name)
+			data[e.Name] = t
+		}
+	}
+	response["stats"] = data
+
 }
