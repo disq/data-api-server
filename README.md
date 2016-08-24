@@ -11,7 +11,10 @@ Run `go build`
 
 ### Usage
 
-Run `./data-api-server --port 8080 --datadir /data/api`. More options:
+```
+./data-api-server --port 8080 --datadir /data/api
+```
+More options:
 
 ```bash
 Usage of ./data-api-server:
@@ -30,6 +33,8 @@ Usage of ./data-api-server:
   -stderr
        	outputs to standard error (stderr)
 ```
+
+Redis is somewhat optional, it will simply try to connect to the default host on each received event, fail, and print a log. The event will get stored.
 
 ## Event Types
 Event types are registered in `main.go`. Valid events are `session_start`, `session_end` and `link_clicked`. The `EventType` struct is defined in `server/event.go`:
@@ -54,7 +59,7 @@ This version of the API always uses HTTP GET.
   - Pro: Easier to log/trace/sniff by third-party tools since all of the data is in the same place. For instance you can enable web-request logging in the load balancer and automatically get a backup of all your API calls.
   - Pro: Easier to test/use by non-developers (ie. in a web browser)
   - Con: Does not support lengthy data as opposed to POST or PUT
-  - Con: Can inadvertently get cached
+  - Con: Can inadvertently get cached (In our current implementation, cache-buster GET parameters would get stored as well)
   - Con: Escaping may become a problem when hand-testing
 
 ## Request Format
@@ -76,13 +81,13 @@ The file format is TSV with embedded JSON, first column is the received timestam
 The files are stored in `datadir` in this format:
 
 ```
-<datadir>/<YYYY>/<MM>/<DD>/<HH>_<event name>.tsv
+<datadir>/<YYYY>/<MM>/<DD>/<HH>_<EventType>.tsv
 ```
 
 To change the format, edit `DIRECTORY_FORMAT` and `FILE_FORMAT` in `storage.go`.
 
-- If event types in storage are to be queried separately instead of looking at all the events of a specific date, the `event_name` field can be moved up the chain to its own directory.
-- If a log collector (like Apache Flume, td-agent, etc) is to be used to push data to storage, the directory scheme can be abandoned altogether and each event type can have its own file per-hour (or per-day).
+- If event types in storage are to be queried separately instead of looking at all the events of a specific date, the `{event}` field can be moved up the chain to its own directory.
+- If a log collector (like Apache Flume, Fluentd, etc) is to be used to push data to storage, the directory scheme can be abandoned altogether and each event type can have its own file per-hour (or per-day).
 - If the files are to be stored in AWS S3, using a random single-letter prefix (partition key) before the `YYYY` field is recommended. This would avoid hot partitions in the storage layer and prevent I/O bottlenecks. This would require additional development in `storage.go`. (See [Amazon S3 Performance Tips & Tricks](https://aws.amazon.com/blogs/aws/amazon-s3-performance-tips-tricks-seattle-hiring-event/)) 
 
 
@@ -96,6 +101,7 @@ To change the format, edit `DIRECTORY_FORMAT` and `FILE_FORMAT` in `storage.go`.
 - Authentication (API key) is not implemented.
 - Rate-limiting is not implemented, but it should be fairly easy using proper middleware.
 - CSV escapes quotes, which is not good because the data is a JSON map and always has quotes in it. Another format (at least custom CSV dialect with quote-escaping disabled) would've been better.
+- Tests are not provided.
 
 
 ## Statistics

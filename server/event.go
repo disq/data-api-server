@@ -58,15 +58,15 @@ func (s *Server) getEventType(r *EventRecord) *EventType {
 	return nil
 }
 
-func (s *Server) extractTimestamp(e *EventRecord) error {
+func (s *Server) extractTimestamp(r *EventRecord) error {
 	currentTsNano := time.Now().UnixNano()
 	currentTsSecs := int(currentTsNano / SECOND_IN_NANOSECONDS)
 
 	var ts int = 0
-	if e.data["ts"] != nil {
-		floatTs, err := strconv.ParseFloat(e.data["ts"].(string), 64) // allow for float input
+	if r.data["ts"] != nil {
+		floatTs, err := strconv.ParseFloat(r.data["ts"].(string), 64) // allow for float input
 		if err != nil {
-			s.Logger.Debugf("Invalid timestamp %s, will override", e.data["ts"].(string))
+			s.Logger.Debugf("Invalid timestamp %s, will override", r.data["ts"].(string))
 		}
 		ts = int(floatTs) // just chop it off
 	}
@@ -79,8 +79,8 @@ func (s *Server) extractTimestamp(e *EventRecord) error {
 		ts = currentTsSecs
 	}
 
-	e.data["ts"] = ts
-	e.tsReceived = currentTsNano
+	r.data["ts"] = ts
+	r.tsReceived = currentTsNano
 
 	return nil
 }
