@@ -54,6 +54,8 @@ func (s *Stats) CountEvent(e *EventRecord) {
 
 	key := s.getEventKeyFromType(e.name)
 
+	// TODO do it in Lua, one less Redis call
+
 	// We could assume that there would be one event for this eventType each nanosecond
 	// But we don't and keep a counter to have unique sorted set members
 	id, err := conn.Do("INCR", fmt.Sprintf("eventCounter:%s", e.name))
@@ -61,6 +63,10 @@ func (s *Stats) CountEvent(e *EventRecord) {
 		s.Logger.Errorf("INCR failed for %s: %v, skipping stats", e, err)
 		return
 	}
+	// Idea: if we were to store the actual data in Redis as well, we can use a key like <eventType>:<id>.
+	// Then we can not just count the data take out time-slices as well (Lua would be a big plus)
+
+	// If ids were generated beforehand (maybe something like <host identifier> + e.tsReceived, or UUID) we can also store the id in Storage to correlate
 
 	// This won't scale at all, O(log(N)) operation
 	score := int(e.tsReceived / SECOND_IN_NANOSECONDS) // Second precision

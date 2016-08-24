@@ -41,6 +41,9 @@ func (s *Server) handleEvent(r *EventRecord) error {
 	s.Logger.Debug("Final form:", r)
 
 	t.Storage.Enqueue(r)
+
+	// TODO This can be launched in separate goroutine, or sent to a buffered channel and processed by a worker pool
+	// For now just count the event synchronously
 	s.Stats.CountEvent(r)
 
 	return nil

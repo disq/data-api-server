@@ -88,7 +88,7 @@ To change the format, edit `DIRECTORY_FORMAT` and `FILE_FORMAT` in `storage.go`.
 
 
 ## Caveats
-- Bulk mode is not supported. A way to send bulk (ie. previously cached) events can be implemented, preferably with a protocol that natively supports batching.
+- Bulk mode is not supported. A way to send bulk (ie. previously stored) events can be implemented, preferably with a protocol that natively supports batching.
 - Events are validated in the same goroutine as the request, because event validation is currently a few string operations. This way we can tell the client if their event is "valid" or not using the HTTP status code in the response.
 - If time-consuming validation tasks are needed, the server should always return `200 OK` on received data and do the actual processing/validation in a worker-pool.
 - Events are written to storage in a single-threaded manner (one goroutine per file) due to the nature of the CSV-format. If we were to switch the filesystem with a data storage service, a worker-pool should be used so that events can be written in parallel.
@@ -100,7 +100,7 @@ To change the format, edit `DIRECTORY_FORMAT` and `FILE_FORMAT` in `storage.go`.
 
 ## Statistics
 - Redis is used to store aggregated event counts.
-- Counts are stored in sorted sets by type. (This probably won't scale at all since adding elements is expensive)
+- Counts are stored in sorted sets by type, in the keys `eventsByType:<EventType>`. (This probably won't scale at all since adding elements is expensive)
 - To get overall counts, make a request to the `/stats` endpoint:
 ```
 $ curl 'http://:8080/stats'|jq .
@@ -130,7 +130,10 @@ $ curl 'http://:8080/stats?since=1472063303'|jq .
   "until": 0
 }
 ```
-
+- Each event is assigned a unique-per-type id (`INCR eventCounter:<EventType>` is used) but this costs us a second call to Redis. A Lua-script can be used to piggyback the `INCR` and `ZADD` calls.
+- Stats are collected in the same goroutine, an asynchronous solution would be to use a worker pool on a buffered channel.
+- The data can actually be stored in Redis as well, and time-slices of it can be fetched semi-efficiently.
+- A mechanism to expire old elements in the sorted sets is not implemented. The statistics will eventually become inconsistent, as Redis evicts keys.
 
 
 ## SDKs
