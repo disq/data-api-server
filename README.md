@@ -1,4 +1,4 @@
-# Sample Data API
+# Sample Data API Server
 
 ## Purpose
 
@@ -11,10 +11,10 @@ Run `go build`
 
 ### Usage
 
-Run `./data-api --port 8080 --datadir /data/api`. More options:
+Run `./data-api-server --port 8080 --datadir /data/api`. More options:
 
 ```bash
-Usage of ./data-api:
+Usage of ./data-api-server:
   -datadir string
        	Path to data directory (default "/tmp")
   -flushlog string

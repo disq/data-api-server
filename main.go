@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/disq/data-api/server"
+	"github.com/disq/data-api-server/server"
 	"github.com/alexcesaro/log/stdlog"
 	"os"
 	"strconv"
