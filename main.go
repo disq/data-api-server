@@ -51,17 +51,30 @@ func main() {
 	}
 
 	// Register Events
-	et := []server.EventType{
-		server.NewEventType("session_start"),
-		server.NewEventType("session_end"),
-		server.NewEventType("link_clicked"),
+	eventNames := []string{
+		"session_start",
+		"session_end",
+		"link_clicked",
 	}
 
-	// Configure & Init storage
-	storage := server.NewStorage(&server.StorageConfig{
-		DataDir: *dataDir,
-	}, logger)
-	storage.RunInBackground()
+	// Here we initialize separate Storage instances for each event type.
+	// Since each event type will be stored to its own file, there's no reason not to do it in parallel.
+
+	// Iterate event names and create EventTypes, initialize separate Storage worker for each EventType
+	et := make([]server.EventType, len(eventNames))
+	for i, n := range eventNames {
+		e := server.NewEventType(n)
+		e.Storage = server.NewStorage(&server.StorageConfig{
+			DataDir: *dataDir,
+		}, logger)
+
+		et[i] = e
+	}
+
+	// Run Storage workers
+	for _, e := range et {
+		e.Storage.RunInBackground()
+	}
 
 	// Configure Server
 	config := &server.ServerConfig{
@@ -74,7 +87,10 @@ func main() {
 	}
 
 	// Run
-	server.NewServer(config, logger, storage).Run()
+	server.NewServer(config, logger).Run()
 
-	storage.Stop()
+	// Wait for all storage workers to stop
+	for _, e := range et {
+		e.Storage.Stop()
+	}
 }

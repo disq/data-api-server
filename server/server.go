@@ -19,19 +19,17 @@ type ServerConfig struct {
 }
 
 type Server struct {
-	Config  *ServerConfig
-	Logger  log.Logger
-	Storage *Storage
+	Config *ServerConfig
+	Logger log.Logger
 }
 
 const OK_CONTENT = "Accepted"
 
-func NewServer(c *ServerConfig, l log.Logger, s *Storage) *Server {
+func NewServer(c *ServerConfig, l log.Logger) *Server {
 
 	return &Server{
-		Config:  c,
-		Logger:  l,
-		Storage: s,
+		Config: c,
+		Logger: l,
 	}
 }
 

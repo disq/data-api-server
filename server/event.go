@@ -9,11 +9,12 @@ import (
 )
 
 type EventType struct {
-	name string
+	Name    string
+	Storage *Storage
 }
 
 func NewEventType(name string) EventType {
-	return EventType{name}
+	return EventType{Name: name}
 }
 
 type EventRecord struct {
@@ -39,7 +40,7 @@ func (s *Server) handleEvent(r *EventRecord) error {
 	s.extractTimestamp(r)
 	s.Logger.Debug("Final form:", r)
 
-	s.Storage.Enqueue(r)
+	t.Storage.Enqueue(r)
 	// TODO Update stats
 
 	return nil
@@ -47,7 +48,7 @@ func (s *Server) handleEvent(r *EventRecord) error {
 
 func (s *Server) getEventType(r *EventRecord) *EventType {
 	for _, t := range s.Config.EventTypes {
-		if t.name == r.name {
+		if t.Name == r.name {
 			return &t
 		}
 	}
