@@ -1,10 +1,12 @@
 package server
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"github.com/alexcesaro/log"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -52,15 +54,24 @@ func (s *Storage) Run() {
 		ofName string
 		of     *os.File
 		err    error
+		cw     *csv.Writer
 	)
 
+	closeOpenFile := func() {
+		if of != nil {
+			cw.Flush()
+			err = cw.Error()
+			if err != nil {
+				s.Logger.Errorf("Could not flush csv file %s: %v", ofName, err)
+				panic(err)
+			}
+			of.Close()
+		}
+	}
 	for r := range s.records {
 		dir, filename := s.determineStoragePath(r)
 		if filename != ofName { // is another file other than our destination file open?
-			if of != nil {
-				of.Close()
-			}
-
+			closeOpenFile()
 			s.ensureDir(dir)
 			openFlags := os.O_APPEND | os.O_WRONLY
 			if _, err := os.Stat(filename); err != nil {
@@ -72,15 +83,19 @@ func (s *Storage) Run() {
 				s.Logger.Errorf("Could not open %s: %v", filename, err)
 				panic(err)
 			}
+			cw = csv.NewWriter(of)
+			cw.Comma = '\t' // Create TSV
 			ofName = filename
 		}
 
-		_, err = of.WriteString(s.recordToStorageFormat(r))
+		err = cw.Write(s.recordToStorageFormat(r))
+		if err != nil {
+			s.Logger.Errorf("Could not write record %s: %v", r, err)
+			panic(err)
+		}
 	}
 
-	if of != nil {
-		of.Close()
-	}
+	closeOpenFile()
 	s.wg.Done()
 }
 
@@ -88,11 +103,13 @@ func (s *Storage) Enqueue(r *EventRecord) {
 	s.records <- r
 }
 
-func (s *Storage) recordToStorageFormat(r *EventRecord) string {
+func (s *Storage) recordToStorageFormat(r *EventRecord) []string {
 	jsonData, _ := json.Marshal(r.data)
-	// tsv file (without csv quoting, careful)
-	// timestamp	json data
-	return fmt.Sprintf("%d\t%v\n", r.ts, string(jsonData))
+
+	return []string{
+		strconv.Itoa(r.ts), // timestamp
+		string(jsonData),   // json data
+	}
 }
 
 func (s *Storage) determineStoragePath(r *EventRecord) (dir, fileWithDir string) {
