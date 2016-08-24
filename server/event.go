@@ -17,9 +17,9 @@ func NewEventType(name string) EventType {
 }
 
 type EventRecord struct {
-	name string
-	ts   int
-	data map[string]interface{}
+	name       string
+	tsReceived int64
+	data       map[string]interface{}
 }
 
 const ALLOWED_PAST_TIME_IN_SECONDS = 86400
@@ -52,6 +52,9 @@ func (s *Server) getEventType(r *EventRecord) *EventType {
 }
 
 func (s *Server) extractTimestamp(e *EventRecord) error {
+	currentTsNano := time.Now().UnixNano()
+	currentTsSecs := int(currentTsNano / 1000000000)
+
 	var ts int = 0
 	if e.data["ts"] != nil {
 		floatTs, err := strconv.ParseFloat(e.data["ts"].(string), 64) // allow for float input
@@ -61,22 +64,21 @@ func (s *Server) extractTimestamp(e *EventRecord) error {
 		ts = int(floatTs) // just chop it off
 	}
 
-	currentTs := int(time.Now().Unix())
-	if ts > currentTs { // No future times!
+	if ts > currentTsSecs { // No future times!
 		//s.Logger.Warning("Future timestamp %v, will override", ts)
-		ts = currentTs
-	} else if ts < currentTs-ALLOWED_PAST_TIME_IN_SECONDS { // Past time beyond ALLOWED_PAST_TIME_IN_SECONDS!
+		ts = currentTsSecs
+	} else if ts < currentTsSecs-ALLOWED_PAST_TIME_IN_SECONDS { // Past time beyond ALLOWED_PAST_TIME_IN_SECONDS!
 		//s.Logger.Warning("Past timestamp %v, will override", ts)
-		ts = currentTs
+		ts = currentTsSecs
 	}
 
-	e.ts = ts
-	delete(e.data, "ts") // don't keep the redundant "ts" in data
+	e.data["ts"] = ts
+	e.tsReceived = currentTsNano
 
 	return nil
 }
 
 func (r *EventRecord) String() string {
 	jsonData, _ := json.Marshal(r.data)
-	return fmt.Sprintf("[%s @ %d] %v", r.name, r.ts, string(jsonData))
+	return fmt.Sprintf("[%s @ %d] %v", r.name, r.tsReceived, string(jsonData))
 }

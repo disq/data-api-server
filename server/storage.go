@@ -107,8 +107,8 @@ func (s *Storage) recordToStorageFormat(r *EventRecord) []string {
 	jsonData, _ := json.Marshal(r.data)
 
 	return []string{
-		strconv.Itoa(r.ts), // timestamp
-		string(jsonData),   // json data
+		strconv.FormatInt(r.tsReceived, 10), // timestamp
+		string(jsonData),                    // json data
 	}
 }
 
