@@ -63,7 +63,7 @@ func (s *Server) extractTimestamp(e *EventRecord) error {
 	if e.data["ts"] != nil {
 		floatTs, err := strconv.ParseFloat(e.data["ts"].(string), 64) // allow for float input
 		if err != nil {
-			s.Logger.Warning("Invalid timestamp %v, will override", e.data["ts"])
+			s.Logger.Debugf("Invalid timestamp %s, will override", e.data["ts"].(string))
 		}
 		ts = int(floatTs) // just chop it off
 	}

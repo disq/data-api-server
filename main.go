@@ -25,7 +25,7 @@ func main() {
 		panic(err)
 	}
 	if *listenPort < 1 || *listenPort > 65535 {
-		logger.Errorf("Invalid port %d", *listenPort)
+		logger.Error("Invalid port", *listenPort)
 		panic("Invalid port")
 	}
 
@@ -36,17 +36,17 @@ func main() {
 	}
 	redisHost := redisParts[0]
 	if redisHost == "" {
-		logger.Error("Cant specify empty redis host")
+		logger.Error("Can't specify empty redis host")
 		panic("Invalid redis host")
 	}
 	redisPort, err := strconv.Atoi(redisParts[1])
 	if err != nil || redisPort < 1 || redisPort > 65535 {
-		logger.Errorf("Invalid redis port %v", redisParts[1])
+		logger.Error("Invalid redis port", redisParts[1])
 		panic("Invalid redis port")
 	}
 	redisDb, err := strconv.Atoi(redisParts[2])
 	if err != nil || redisDb < 0 || redisDb > 65535 {
-		logger.Errorf("Invalid redis db %v", redisParts[2])
+		logger.Error("Invalid redis db", redisParts[2])
 		panic("Invalid redis db")
 	}
 

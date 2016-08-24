@@ -91,7 +91,7 @@ func (s *Stats) GetCounts(eventName string, start, stop int) (count int, err err
 	// Slow as well, O(log(N))
 	count, err = redis.Int(conn.Do("ZCOUNT", key, argStart, argStop))
 	if err != nil {
-		s.Logger.Errorf("Error during ZCOUNT %s(%d,%d): %v", key, start, stop, err)
+		s.Logger.Errorf("ZCOUNT failed for %s(%d,%d): %v", key, start, stop, err)
 	}
 
 	return
@@ -106,7 +106,7 @@ func (s *Stats) GetTotal(eventName string) (count int, err error) {
 	// This is much faster, O(1)
 	count, err = redis.Int(conn.Do("ZCARD", key))
 	if err != nil {
-		s.Logger.Errorf("Error during ZCARD %s: %v", key, err)
+		s.Logger.Errorf("ZCARD failed for %s: %v", key, err)
 	}
 
 	return
