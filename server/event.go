@@ -22,7 +22,10 @@ type EventRecord struct {
 	data       map[string]interface{}
 }
 
-const ALLOWED_PAST_TIME_IN_SECONDS = 86400
+const (
+	ALLOWED_PAST_TIME_IN_SECONDS = 86400
+	SECOND_IN_NANOSECONDS        = 1000000000
+)
 
 func (s *Server) handleEvent(r *EventRecord) error {
 	t := s.getEventType(r)
@@ -53,7 +56,7 @@ func (s *Server) getEventType(r *EventRecord) *EventType {
 
 func (s *Server) extractTimestamp(e *EventRecord) error {
 	currentTsNano := time.Now().UnixNano()
-	currentTsSecs := int(currentTsNano / 1000000000)
+	currentTsSecs := int(currentTsNano / SECOND_IN_NANOSECONDS)
 
 	var ts int = 0
 	if e.data["ts"] != nil {
